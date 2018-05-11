@@ -3145,6 +3145,11 @@
    <extension
          point="org.talend.repository.projectsetting_page">
       <page
+            class="org.talend.repository.preference.AuditProjectSettingPage"
+            id="org.talend.repository.auditPage"
+            title="%projectsetting.Audit">
+      </page>
+      <page
             class="org.talend.repository.preference.GeneralProjectSettingPage"
             id="general"
             order="0"
