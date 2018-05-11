@@ -3060,6 +3060,15 @@
               name="KeepChangeRemoteDirFalseForFTPFileExist"
               version="7.1.0">
         </projecttask>
+		<projecttask
+              beforeLogon="true"
+              breaks="7.1.1"
+              class="org.talend.repository.model.migration.AddDockerProfileMigrationTask"
+              description="Add docker profile"
+              id="org.talend.repository.model.migration.AddDockerProfileMigrationTask"
+              name="AddDockerProfileMigrationTask"
+              version="7.1.1">
+        </projecttask>
    </extension>
 
    <extension
