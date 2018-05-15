@@ -12,15 +12,13 @@
 // ============================================================================
 package org.talend.repository.preference;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 
 import org.apache.commons.lang.StringUtils;
-import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
@@ -33,13 +31,12 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
-import org.osgi.framework.Bundle;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.ui.swt.formtools.LabelledText;
+import org.talend.commons.utils.io.FilesUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.service.ICommandLineService;
-import org.talend.repository.RepositoryPlugin;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
 
@@ -116,23 +113,26 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                                 if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
                                     ICommandLineService service = (ICommandLineService) GlobalServiceRegister.getDefault()
                                             .getService(ICommandLineService.class);
-                                    final Bundle b = Platform.getBundle(RepositoryPlugin.PLUGIN_ID);
                                     String path = "";//$NON-NLS-1$
-                                    if (b != null) {
-                                        try {
-                                            URL url = FileLocator.toFileURL(FileLocator.find(b, new Path("/"), null));//$NON-NLS-1$
-                                            if (url != null) {
-                                                path = url.getPath();
-                                            }
-                                        } catch (IOException ex) {
-                                            //
-                                        }
+                                    File tempFolder = null;
+                                    try {
+                                        File createTempFile = File.createTempFile("AuditReport", ""); //$NON-NLS-1$ //$NON-NLS-2$
+                                        path = createTempFile.getPath();
+                                        createTempFile.delete();
+                                        tempFolder = new File(path);
+                                        tempFolder.mkdir();
+                                        path = path.replace("\\", "/");//$NON-NLS-1$//$NON-NLS-2$
+                                        
+                                        // Just use the h2 as default now, later will add support for others
+                                        service.populateAudit("populateAudit -ju 'jdbc:h2:" + path //$NON-NLS-1$
+                                                + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000' -dd 'org.h2.Driver' -du 'tisadmin' -up 'tisadmin'"); //$NON-NLS-1$
+                                        service.generateAuditReport("generateAuditReport 'auditId' -fp 'filePath' -t 'default'", //$NON-NLS-1$
+                                                generateFolderTxt.getText());
+                                    } catch (IOException e) {
+                                        // nothing
+                                    } finally {
+                                        FilesUtils.deleteFile(tempFolder, true);
                                     }
-                                    // Just use the h2 as default now, later will add support for others
-                                    service.populateAudit("populateAudit -ju 'jdbc:h2:" + path //$NON-NLS-1$
-                                            + "database/audit;AUTO_SERVER=TRUE;lock_timeout=15000' -dd 'org.h2.Driver' -du 'tisadmin' -up 'tisadmin'"); //$NON-NLS-1$
-                                    service.generateAuditReport("generateAuditReport 'auditId' -fp 'filePath' -t 'default'", //$NON-NLS-1$
-                                            generateFolderTxt.getText());
                                 }
                             }
                         });
