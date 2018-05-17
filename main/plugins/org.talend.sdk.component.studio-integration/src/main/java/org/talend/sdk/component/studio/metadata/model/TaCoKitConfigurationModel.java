@@ -44,7 +44,7 @@ public class TaCoKitConfigurationModel {
 
     private final Connection connection;
     
-    private ConfigTypeNode configType;
+    private final ConfigTypeNode configType;
 
     private TaCoKitConfigurationModel parentConfigurationModelCache;
 
@@ -53,12 +53,33 @@ public class TaCoKitConfigurationModel {
     public TaCoKitConfigurationModel(final Connection connection, final ConfigTypeNode configType) {
         this.connection = connection;
         this.configType = configType;
+        setConfigurationId(configType.getId());
+        setParentConfigurationId(configType.getParentId());
+        initVersion();
     }
     
     public TaCoKitConfigurationModel(final Connection connection) {
         this.connection = connection;
         final String configId = getConfigId(connection);
         this.configType = Lookups.taCoKitCache().getConfigTypeNode(configId);
+        setConfigurationId(configType.getId());
+        setParentConfigurationId(configType.getParentId());
+        initVersion();
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void setConfigurationId(final String id) {
+        getProperties().put(TACOKIT_CONFIG_ID, id);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setParentConfigurationId(final String parentId) {
+        getProperties().put(TACOKIT_CONFIG_PARENT_ID, parentId);
+    }
+    
+    // TODO remove it
+    private void initVersion() {
+        storeVersion(String.valueOf(getCurrentVersion()));
     }
     
     @SuppressWarnings("deprecation")
@@ -110,28 +131,19 @@ public class TaCoKitConfigurationModel {
     public int getConfigTypeNodeVersion() throws Exception {
         return getConfigTypeNode().getVersion();
     }
-
-    public void initVersion() throws Exception {
-        storeVersion(String.valueOf(getConfigTypeNodeVersion()));
+    
+    public int getCurrentVersion() {
+        return configType.getVersion();
     }
 
     public String getConfigurationId() {
         return (String) getProperties().get(TACOKIT_CONFIG_ID);
     }
 
-    @SuppressWarnings("unchecked")
-    public void setConfigurationId(final String id) {
-        getProperties().put(TACOKIT_CONFIG_ID, id);
-    }
-
     public String getParentConfigurationId() {
         return (String) getProperties().get(TACOKIT_CONFIG_PARENT_ID);
     }
 
-    @SuppressWarnings("unchecked")
-    public void setParentConfigurationId(final String parentId) {
-        getProperties().put(TACOKIT_CONFIG_PARENT_ID, parentId);
-    }
 
     public String getParentItemId() {
         return (String) getProperties().get(TACOKIT_PARENT_ITEM_ID);
