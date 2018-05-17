@@ -50,6 +50,10 @@ public class TaCoKitConfigurationModel {
 
     private String parentConfigurationModelItemIdCache;
     
+    public TaCoKitConfigurationModel(final Connection connection) {
+        this(connection, Lookups.taCoKitCache().getConfigTypeNode(getConfigId(connection)));
+    }
+    
     public TaCoKitConfigurationModel(final Connection connection, final ConfigTypeNode configType) {
         this.connection = connection;
         this.configType = configType;
@@ -57,16 +61,7 @@ public class TaCoKitConfigurationModel {
         setParentConfigurationId(configType.getParentId());
         initVersion();
     }
-    
-    public TaCoKitConfigurationModel(final Connection connection) {
-        this.connection = connection;
-        final String configId = getConfigId(connection);
-        this.configType = Lookups.taCoKitCache().getConfigTypeNode(configId);
-        setConfigurationId(configType.getId());
-        setParentConfigurationId(configType.getParentId());
-        initVersion();
-    }
-    
+
     @SuppressWarnings("unchecked")
     private void setConfigurationId(final String id) {
         getProperties().put(TACOKIT_CONFIG_ID, id);
