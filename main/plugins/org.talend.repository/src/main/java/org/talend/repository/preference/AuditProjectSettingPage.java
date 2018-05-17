@@ -122,12 +122,12 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                                         tempFolder = new File(path);
                                         tempFolder.mkdir();
                                         path = path.replace("\\", "/");//$NON-NLS-1$//$NON-NLS-2$
-                                        
+
                                         // Just use the h2 as default now, later will add support for others
-                                        service.populateAudit("populateAudit -ju 'jdbc:h2:" + path //$NON-NLS-1$
-                                                + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000' -dd 'org.h2.Driver' -du 'tisadmin' -up 'tisadmin'"); //$NON-NLS-1$
-                                        service.generateAuditReport("generateAuditReport 'auditId' -fp 'filePath' -t 'default'", //$NON-NLS-1$
-                                                generateFolderTxt.getText());
+                                        service.populateAudit(
+                                                "jdbc:h2:" + path + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000", //$NON-NLS-1$ //$NON-NLS-2$
+                                                "org.h2.Driver", "tisadmin", "tisadmin"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                                        service.generateAuditReport(generateFolderTxt.getText());
                                     } catch (IOException e) {
                                         // nothing
                                     } finally {
