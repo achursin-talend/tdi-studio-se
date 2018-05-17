@@ -23,7 +23,7 @@ public class TaCoKitConfigurationItemModel {
 
     private final ConnectionItem connectionItem;
 
-    private final TaCoKitConfigurationModel configurationModel;
+    private TaCoKitConfigurationModel configurationModel;
 
     public TaCoKitConfigurationItemModel(final ConnectionItem item) throws Exception {
         this(item, true);
@@ -31,7 +31,6 @@ public class TaCoKitConfigurationItemModel {
 
     public TaCoKitConfigurationItemModel(final ConnectionItem item, final boolean checkVersion) throws Exception {
         this.connectionItem = item;
-        configurationModel = new TaCoKitConfigurationModel(item.getConnection(), checkVersion);
     }
 
     public String getDisplayLabel() {
@@ -43,6 +42,9 @@ public class TaCoKitConfigurationItemModel {
     }
 
     public TaCoKitConfigurationModel getConfigurationModel() {
+        if (configurationModel == null) {
+            configurationModel = new TaCoKitConfigurationModel(connectionItem.getConnection()); 
+        }
         return this.configurationModel;
     }
     

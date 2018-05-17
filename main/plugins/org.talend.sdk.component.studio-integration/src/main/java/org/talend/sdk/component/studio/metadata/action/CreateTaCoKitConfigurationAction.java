@@ -120,8 +120,7 @@ public class CreateTaCoKitConfigurationAction extends TaCoKitMetadataContextualA
         connectionItem.setProperty(property);
         connectionItem.setTypeName(configTypeNode.getId());
 
-        TaCoKitConfigurationItemModel itemModel = new TaCoKitConfigurationItemModel(connectionItem);
-        TaCoKitConfigurationModel configurationModel = itemModel.getConfigurationModel();
+        TaCoKitConfigurationModel configurationModel = new TaCoKitConfigurationModel(connection, configTypeNode);
         configurationModel.setConfigurationId(configTypeNode.getId());
         configurationModel.setParentConfigurationId(configTypeNode.getParentId());
         if (repositoryNode.isLeafNode()) {

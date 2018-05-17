@@ -212,9 +212,7 @@ public class TaCoKitRepositoryContentHandler extends AbstractRepositoryContentHa
                     try {
                         if (repObj != null && repObj.getProperty() != null) {
                             ConnectionItem item = (ConnectionItem) repObj.getProperty().getItem();
-                            Connection connection = item.getConnection();
-                            TaCoKitConfigurationModel model = new TaCoKitConfigurationModel(connection);
-                            if (!items.contains(item) && model.getConfigurationId().equals(configId)) {
+                            if (!items.contains(item) && item.getTypeName().equals(configId)) {
                                 items.add(item);
                             }
                         }

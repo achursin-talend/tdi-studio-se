@@ -20,15 +20,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Priority;
-import org.talend.commons.exception.ExceptionHandler;
 import org.talend.core.model.metadata.builder.connection.Connection;
-import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.sdk.component.server.front.model.ConfigTypeNode;
 import org.talend.sdk.component.server.front.model.SimplePropertyDefinition;
 import org.talend.sdk.component.studio.Lookups;
-import org.talend.sdk.component.studio.i18n.Messages;
-import org.talend.sdk.component.studio.metadata.migration.TaCoKitMigrationManager;
 import org.talend.sdk.component.studio.model.parameter.TaCoKitElementParameter;
 import org.talend.sdk.component.studio.util.TaCoKitUtil;
 
@@ -48,49 +43,60 @@ public class TaCoKitConfigurationModel {
     private static final String TACOKIT_PARENT_ITEM_ID = "__TACOKIT_PARENT_ITEM_ID"; //$NON-NLS-1$
 
     private final Connection connection;
-
-    private ConfigTypeNode configTypeNodeCache;
-
-    private String configTypeNodeIdCache;
+    
+    private ConfigTypeNode configType;
 
     private TaCoKitConfigurationModel parentConfigurationModelCache;
 
     private String parentConfigurationModelItemIdCache;
-
-    public TaCoKitConfigurationModel(final Connection connection) throws Exception {
-        this(connection, true);
-    }
-
-    public TaCoKitConfigurationModel(final Connection connection, final boolean checkVersion) throws Exception {
+    
+    public TaCoKitConfigurationModel(final Connection connection, final ConfigTypeNode configType) {
         this.connection = connection;
-        if (checkVersion) {
-            String configurationId = getConfigurationId();
-            if (!TaCoKitUtil.isBlank(configurationId)) {
-                try {
-                    if (!TaCoKitUtil.equals(getStoredVersion(), String.valueOf(getConfigTypeNodeVersion()))) {
-                        ExceptionHandler.process(new Exception(Messages.getString("migration.check.version.different", //$NON-NLS-1$
-                                configurationId, getStoredVersion(), getConfigTypeNodeVersion())), Priority.WARN);
-                    }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
-                try {
-                    /**
-                     * In case TaCoKit metadata is used in jobs which are migrating during logon project, so just
-                     * migrate it first to provide latest information.
-                     */
-                    if (!ProxyRepositoryFactory.getInstance().isFullLogonFinished()) {
-                        TaCoKitMigrationManager migrationManager = Lookups.taCoKitCache().getMigrationManager();
-                        if (migrationManager.isNeedMigration(this)) {
-                            migrationManager.migrate(this, null);
-                        }
-                    }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
-            }
-        }
+        this.configType = configType;
     }
+    
+    public TaCoKitConfigurationModel(final Connection connection) {
+        this.connection = connection;
+        final String configId = getConfigId(connection);
+        this.configType = Lookups.taCoKitCache().getConfigTypeNode(configId);
+    }
+    
+    @SuppressWarnings("deprecation")
+    private static String getConfigId(final Connection connection) {
+        return (String) connection.getProperties().get(TACOKIT_CONFIG_ID);
+    }
+
+//    @Deprecated
+//    public TaCoKitConfigurationModel(final Connection connection, final boolean checkVersion) throws Exception {
+//        this.connection = connection;
+//        if (checkVersion) {
+//            String configurationId = getConfigurationId();
+//            if (!TaCoKitUtil.isBlank(configurationId)) {
+//                try {
+//                    if (!TaCoKitUtil.equals(getStoredVersion(), String.valueOf(getConfigTypeNodeVersion()))) {
+//                        ExceptionHandler.process(new Exception(Messages.getString("migration.check.version.different", //$NON-NLS-1$
+//                                configurationId, getStoredVersion(), getConfigTypeNodeVersion())), Priority.WARN);
+//                    }
+//                } catch (Exception e) {
+//                    ExceptionHandler.process(e);
+//                }
+//                try {
+//                    /**
+//                     * In case TaCoKit metadata is used in jobs which are migrating during logon project, so just
+//                     * migrate it first to provide latest information.
+//                     */
+//                    if (!ProxyRepositoryFactory.getInstance().isFullLogonFinished()) {
+//                        TaCoKitMigrationManager migrationManager = Lookups.taCoKitCache().getMigrationManager();
+//                        if (migrationManager.isNeedMigration(this)) {
+//                            migrationManager.migrate(this, null);
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    ExceptionHandler.process(e);
+//                }
+//            }
+//        }
+//    }
 
     public String getStoredVersion() {
         return (String) getProperties().get(TACOKIT_CONFIG_VERSION);
@@ -200,14 +206,7 @@ public class TaCoKitConfigurationModel {
     }
 
     public ConfigTypeNode getConfigTypeNode() throws Exception {
-        if (configTypeNodeCache == null || !TaCoKitUtil.equals(configTypeNodeIdCache, getConfigurationId())) {
-            configTypeNodeCache = null;
-            configTypeNodeIdCache = getConfigurationId();
-            if (!TaCoKitUtil.isEmpty(configTypeNodeIdCache)) {
-                configTypeNodeCache = Lookups.taCoKitCache().getConfigTypeNodeMap().get(configTypeNodeIdCache);
-            }
-        }
-        return configTypeNodeCache;
+        return configType;
     }
 
     public TaCoKitConfigurationModel getParentConfigurationModel() throws Exception {

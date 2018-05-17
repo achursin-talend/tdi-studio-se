@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.components.IComponent;
@@ -70,7 +71,7 @@ public class TaCoKitDragAndDropHandler extends AbstractDragAndDropServiceHandler
         }
         try {
             TaCoKitConfigurationModel model = new TaCoKitConfigurationModel(connection);
-            if (!TaCoKitUtil.isEmpty(model.getConfigurationId())) {
+            if (!StringUtils.isEmpty(model.getConfigurationId())) {
                 return true;
             }
         } catch (Exception e) {
