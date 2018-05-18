@@ -59,7 +59,9 @@ public class TaCoKitConfigurationModel {
         this.configType = configType;
         setConfigurationId(configType.getId());
         setParentConfigurationId(configType.getParentId());
-        setVersion(getConfigurationVersion());
+        if (!isVersionSet()) {
+            setVersion(getConfigurationVersion());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -108,6 +110,10 @@ public class TaCoKitConfigurationModel {
 //            }
 //        }
 //    }
+    
+    private boolean isVersionSet() {
+        return getAllProperties().containsKey(TACOKIT_CONFIG_VERSION);
+    }
     
     public int getVersion() {
         final String version = (String) getAllProperties().get(TACOKIT_CONFIG_VERSION);

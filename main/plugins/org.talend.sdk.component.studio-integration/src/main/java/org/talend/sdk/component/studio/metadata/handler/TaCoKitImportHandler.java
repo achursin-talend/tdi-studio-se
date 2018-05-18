@@ -17,6 +17,7 @@ import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.items.importexport.handlers.imports.MetadataConnectionImportHandler;
 import org.talend.repository.items.importexport.handlers.model.ImportItem;
+import org.talend.repository.model.IProxyRepositoryFactory;
 import org.talend.sdk.component.server.front.model.ConfigTypeNode;
 import org.talend.sdk.component.studio.Lookups;
 import org.talend.sdk.component.studio.metadata.migration.TaCoKitMigrationManager;
@@ -70,6 +71,8 @@ public class TaCoKitImportHandler extends MetadataConnectionImportHandler {
                     try {
                         manager().migrate(configuration, monitor);
                         importItem.setProperty(connectionItem.getProperty());
+                        final IProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
+                        factory.save(connectionItem);
                     } catch (Exception e) {
                         logError(e);
                     }
