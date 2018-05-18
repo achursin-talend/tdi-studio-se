@@ -236,7 +236,7 @@ public class TaCoKitRepositoryContentHandler extends AbstractRepositoryContentHa
                 try {
                     TaCoKitConfigurationItemModel itemModel = new TaCoKitConfigurationItemModel(item);
                     repObjType = TaCoKitUtil
-                            .getOrCreateERepositoryObjectType(itemModel.getConfigurationModel().getConfigTypeNode());
+                            .getOrCreateERepositoryObjectType(itemModel.getConfigTypeNode());
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
@@ -250,7 +250,7 @@ public class TaCoKitRepositoryContentHandler extends AbstractRepositoryContentHa
     protected void deleteNode(final Item item) throws Exception {
         TaCoKitConfigurationItemModel itemModel = new TaCoKitConfigurationItemModel((ConnectionItem) item);
         ERepositoryObjectType repObjType =
-                TaCoKitUtil.getOrCreateERepositoryObjectType(itemModel.getConfigurationModel().getConfigTypeNode());
+                TaCoKitUtil.getOrCreateERepositoryObjectType(itemModel.getConfigTypeNode());
         RootContainer<String, IRepositoryViewObject> metadata =
                 ProxyRepositoryFactory.getInstance().getMetadata(repObjType);
         Map<String, IRepositoryViewObject> idMap = new HashMap<>();
@@ -270,8 +270,8 @@ public class TaCoKitRepositoryContentHandler extends AbstractRepositoryContentHa
                 try {
                     Property property = repoViewObj.getProperty();
                     ConnectionItem connItem = (ConnectionItem) property.getItem();
-                    TaCoKitConfigurationItemModel connItemModel = new TaCoKitConfigurationItemModel(connItem);
-                    if (TaCoKitUtil.equals(itemId, connItemModel.getConfigurationModel().getParentItemId())) {
+                    TaCoKitConfigurationModel configuration = new TaCoKitConfigurationModel(connItem.getConnection());
+                    if (TaCoKitUtil.equals(itemId, configuration.getParentItemId())) {
                         deleteNode(connItem, idMap);
                     }
                 } catch (Exception e) {

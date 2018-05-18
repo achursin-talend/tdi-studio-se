@@ -12,12 +12,20 @@
  */
 package org.talend.sdk.component.studio.metadata.model;
 
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_CONFIG_ID;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_CONFIG_PARENT_ID;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_CONFIG_VERSION;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_PARENT_ITEM_ID;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.talend.core.model.metadata.builder.connection.Connection;
@@ -34,21 +42,13 @@ import org.talend.sdk.component.studio.util.TaCoKitUtil;
  */
 public class TaCoKitConfigurationModel {
 
-    private static final String TACOKIT_CONFIG_ID = "__TACOKIT_CONFIG_ID"; //$NON-NLS-1$
-
-    private static final String TACOKIT_CONFIG_VERSION = "__TACOKIT_CONFIG_VERSION"; //$NON-NLS-1$
-
-    private static final String TACOKIT_CONFIG_PARENT_ID = "__TACOKIT_CONFIG_PARENT_ID"; //$NON-NLS-1$
-
-    private static final String TACOKIT_PARENT_ITEM_ID = "__TACOKIT_PARENT_ITEM_ID"; //$NON-NLS-1$
-
     private final Connection connection;
     
     private final ConfigTypeNode configType;
 
-    private TaCoKitConfigurationModel parentConfigurationModelCache;
+    private TaCoKitConfigurationModel parentConfigurationModel;
 
-    private String parentConfigurationModelItemIdCache;
+    private String parentConfigurationModelItemId;
     
     public TaCoKitConfigurationModel(final Connection connection) {
         this(connection, Lookups.taCoKitCache().getConfigTypeNode(getConfigId(connection)));
@@ -59,22 +59,17 @@ public class TaCoKitConfigurationModel {
         this.configType = configType;
         setConfigurationId(configType.getId());
         setParentConfigurationId(configType.getParentId());
-        initVersion();
+        setVersion(getConfigurationVersion());
     }
 
     @SuppressWarnings("unchecked")
     private void setConfigurationId(final String id) {
-        getProperties().put(TACOKIT_CONFIG_ID, id);
+        getAllProperties().put(TACOKIT_CONFIG_ID, id);
     }
 
     @SuppressWarnings("unchecked")
     private void setParentConfigurationId(final String parentId) {
-        getProperties().put(TACOKIT_CONFIG_PARENT_ID, parentId);
-    }
-    
-    // TODO remove it
-    private void initVersion() {
-        storeVersion(String.valueOf(getCurrentVersion()));
+        getAllProperties().put(TACOKIT_CONFIG_PARENT_ID, parentId);
     }
     
     @SuppressWarnings("deprecation")
@@ -113,40 +108,36 @@ public class TaCoKitConfigurationModel {
 //            }
 //        }
 //    }
-
-    public String getStoredVersion() {
-        return (String) getProperties().get(TACOKIT_CONFIG_VERSION);
-    }
-
-    @SuppressWarnings("unchecked")
-    public void storeVersion(final String newVersion) {
-        getProperties().put(TACOKIT_CONFIG_VERSION, newVersion);
-    }
-
-    public int getConfigTypeNodeVersion() throws Exception {
-        return getConfigTypeNode().getVersion();
+    
+    public int getVersion() {
+        final String version = (String) getAllProperties().get(TACOKIT_CONFIG_VERSION);
+        return Integer.parseInt(version);
     }
     
-    public int getCurrentVersion() {
+    @SuppressWarnings("unchecked")
+    private void setVersion(final int version) {
+        getAllProperties().put(TACOKIT_CONFIG_VERSION, Integer.toString(version));
+    }
+    
+    public int getConfigurationVersion() {
         return configType.getVersion();
     }
 
     public String getConfigurationId() {
-        return (String) getProperties().get(TACOKIT_CONFIG_ID);
+        return configType.getId();
     }
 
     public String getParentConfigurationId() {
-        return (String) getProperties().get(TACOKIT_CONFIG_PARENT_ID);
+        return (String) getAllProperties().get(TACOKIT_CONFIG_PARENT_ID);
     }
 
-
     public String getParentItemId() {
-        return (String) getProperties().get(TACOKIT_PARENT_ITEM_ID);
+        return (String) getAllProperties().get(TACOKIT_PARENT_ITEM_ID);
     }
 
     @SuppressWarnings("unchecked")
     public void setParentItemId(final String parentItemId) {
-        getProperties().put(TACOKIT_PARENT_ITEM_ID, parentItemId);
+        getAllProperties().put(TACOKIT_PARENT_ITEM_ID, parentItemId);
     }
 
     public ValueModel getValue(final String key) throws Exception {
@@ -154,7 +145,7 @@ public class TaCoKitConfigurationModel {
         if (parentModel != null) {
             ValueModel modelValue = parentModel.getValue(key);
             if (modelValue == null) {
-                if (parentModel.containsKey(key)) {
+                if (parentModel.contains(key)) {
                     return new ValueModel(parentModel, null, getValueType(key));
                 }
             } else {
@@ -162,7 +153,7 @@ public class TaCoKitConfigurationModel {
             }
         }
         String value = getValueOfSelf(key);
-        if (value != null || containsKey(key)) {
+        if (value != null || contains(key)) {
             return new ValueModel(this, value, getValueType(key));
         }
         return null;
@@ -183,14 +174,14 @@ public class TaCoKitConfigurationModel {
             configTypeNode = parentModel.getFirstConfigTypeNodeContains(key);
         }
         if (configTypeNode == null) {
-            if (containsKey(key)) {
+            if (contains(key)) {
                 configTypeNode = getConfigTypeNode();
             }
         }
         return configTypeNode;
     }
 
-    public boolean containsKey(final String key) throws Exception {
+    private boolean contains(final String key) {
         List<SimplePropertyDefinition> properties = getConfigTypeNode().getProperties();
         if (key == null || key.isEmpty() || properties == null || properties.isEmpty()) {
             return false;
@@ -203,84 +194,110 @@ public class TaCoKitConfigurationModel {
         return false;
     }
 
-    public String getValueOfSelf(final String key) {
-        return (String) getProperties().get(key);
+    private String getValueOfSelf(final String key) {
+        return (String) getAllProperties().get(key);
     }
 
     @SuppressWarnings("unchecked")
     public void setValue(final TaCoKitElementParameter parameter) {
-        getProperties().put(parameter.getName(), parameter.getStringValue());
+        Objects.requireNonNull(parameter, "Parameter should not be null");
+        getAllProperties().put(parameter.getName(), parameter.getStringValue());
     }
 
-    public ConfigTypeNode getConfigTypeNode() throws Exception {
+    public ConfigTypeNode getConfigTypeNode() {
         return configType;
     }
 
     public TaCoKitConfigurationModel getParentConfigurationModel() throws Exception {
-        if (parentConfigurationModelCache == null
-                || !TaCoKitUtil.equals(parentConfigurationModelItemIdCache, getParentItemId())) {
-            parentConfigurationModelCache = null;
-            parentConfigurationModelItemIdCache = getParentItemId();
-            if (!TaCoKitUtil.isEmpty(parentConfigurationModelItemIdCache)) {
-                parentConfigurationModelCache = TaCoKitUtil.getTaCoKitConfigurationModel(parentConfigurationModelItemIdCache);
+        if (parentConfigurationModel == null
+                || !TaCoKitUtil.equals(parentConfigurationModelItemId, getParentItemId())) {
+            parentConfigurationModel = null;
+            parentConfigurationModelItemId = getParentItemId();
+            if (!TaCoKitUtil.isEmpty(parentConfigurationModelItemId)) {
+                parentConfigurationModel = TaCoKitUtil.getTaCoKitConfigurationModel(parentConfigurationModelItemId);
             }
         }
-        return parentConfigurationModelCache;
+        return parentConfigurationModel;
     }
 
     /**
      * Retrieves {@link Connection} properties holder.
-     * 
      * Properties should contain only String values as they values are not converted further during serialization
      *
-     * 
-     * 
      * @return map of connection properties
      */
     @SuppressWarnings({ "deprecation", "rawtypes" })
-    public Map getProperties() {
+    private Map getAllProperties() {
         return connection.getProperties();
     }
-
-    public Map getPropertiesWithoutBuiltIn() {
-        Map propertiesWithoutBuiltin = new HashMap(connection.getProperties());
-
-        Iterator iterator = propertiesWithoutBuiltin.entrySet().iterator();
-        Set<String> builtinKeys = getBuiltinKeys();
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Entry) iterator.next();
-            String key = (String) entry.getKey();
-            if (builtinKeys.contains(key)) {
-                iterator.remove();
+    
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Map getBuiltInProperties() {
+        final Map builtIn = new HashMap();
+        final Iterator it = getAllProperties().entrySet().iterator();
+        while (it.hasNext()) {
+            final Map.Entry entry = (Entry) it.next();
+            final String key = (String) entry.getKey();
+            if (BuiltInKeys.isBuiltIn(key)) {
+                builtIn.put(key, entry.getValue());
             }
         }
-
-        return propertiesWithoutBuiltin;
+        return builtIn;
     }
-
-    public Set<String> getBuiltinKeys() {
-        Set<String> builtinKeys = new HashSet<>();
-        builtinKeys.add(TACOKIT_CONFIG_ID);
-        builtinKeys.add(TACOKIT_CONFIG_PARENT_ID);
-        builtinKeys.add(TACOKIT_PARENT_ITEM_ID);
-        return builtinKeys;
-    }
-
-    public void clearProperties(final boolean isClearBuiltin) {
-        Iterator iterator = connection.getProperties().entrySet().iterator();
-        Set<String> builtinKeys = getBuiltinKeys();
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Entry) iterator.next();
-            String key = (String) entry.getKey();
-            boolean isBuiltin = builtinKeys.contains(key);
-            if (isClearBuiltin == isBuiltin) {
-                iterator.remove();
+    
+    /**
+     * Returns properties view, which doesn't include built-in (service) properties
+     * 
+     * @return properties view
+     */
+    @SuppressWarnings("rawtypes")
+    public Map<String, String> getProperties() {
+        Map<String, String> properties = new HashMap<>();
+        final Iterator it = getAllProperties().entrySet().iterator();
+        while (it.hasNext()) {
+            final Map.Entry entry = (Entry) it.next();
+            final String key = (String) entry.getKey();
+            if (!BuiltInKeys.isBuiltIn(key)) {
+                properties.put(key, (String) entry.getValue());
             }
         }
+        return Collections.unmodifiableMap(properties);
+    }
+    
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private void clear() {
+        final Map builtIn = getBuiltInProperties();
+        getAllProperties().clear();
+        getAllProperties().putAll(builtIn);
     }
 
     public Connection getConnection() {
         return connection;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public void migrate(final Map<String, String> migratedProperties) {
+        clear();
+        getAllProperties().putAll(migratedProperties);
+        setVersion(getConfigurationVersion());
+    }
+    
+    /**
+     * Checks whether Configuration requires migration. Configuration requires
+     * migration in case current Configuration version is greater than persisted
+     * version. In case versions are equal migration is not required. If persisted
+     * version is greater than current version, then IllegalStateException is thrown
+     * 
+     * @return true, if migration is required
+     */
+    public boolean needsMigration() {
+        final int currentVersion = getConfigurationVersion();
+        final int persistedVersion = getVersion();
+        if (currentVersion < persistedVersion) {
+            throw new IllegalStateException(
+                    "current version: " + currentVersion + " persisted version: " + persistedVersion);
+        }
+        return currentVersion != persistedVersion;
     }
 
     public static class ValueModel {
@@ -313,6 +330,25 @@ public class TaCoKitConfigurationModel {
         public String toString() {
             return "TaCoKitConfigurationModel.ValueModel(configurationModel=" + this.getConfigurationModel() + ", value="
                     + this.getValue() + ", type=" + this.getType() + ")";
+        }
+
+    }
+        
+    public static class BuiltInKeys {
+
+        static final String TACOKIT_CONFIG_ID = "__TACOKIT_CONFIG_ID"; //$NON-NLS-1$
+
+        static final String TACOKIT_CONFIG_VERSION = "__TACOKIT_CONFIG_VERSION"; //$NON-NLS-1$
+
+        static final String TACOKIT_CONFIG_PARENT_ID = "__TACOKIT_CONFIG_PARENT_ID"; //$NON-NLS-1$
+
+        static final String TACOKIT_PARENT_ITEM_ID = "__TACOKIT_PARENT_ITEM_ID"; //$NON-NLS-1$
+
+        private static final Set<String> keys = new HashSet<>(Arrays.asList(TACOKIT_CONFIG_ID, TACOKIT_CONFIG_VERSION,
+                TACOKIT_CONFIG_PARENT_ID, TACOKIT_PARENT_ITEM_ID));
+
+        static boolean isBuiltIn(final String key) {
+            return keys.contains(key);
         }
 
     }

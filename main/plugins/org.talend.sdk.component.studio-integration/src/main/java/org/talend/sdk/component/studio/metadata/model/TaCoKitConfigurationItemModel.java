@@ -17,35 +17,18 @@ import org.talend.sdk.component.server.front.model.ConfigTypeNode;
 import org.talend.sdk.component.studio.Lookups;
 
 /**
- * DOC cmeng class global comment. Detailled comment
+ * Wrapper for ConnectionItem, which provides convenient API
  */
 public class TaCoKitConfigurationItemModel {
 
     private final ConnectionItem connectionItem;
 
-    private TaCoKitConfigurationModel configurationModel;
-
     public TaCoKitConfigurationItemModel(final ConnectionItem item) throws Exception {
-        this(item, true);
-    }
-
-    public TaCoKitConfigurationItemModel(final ConnectionItem item, final boolean checkVersion) throws Exception {
         this.connectionItem = item;
     }
 
     public String getDisplayLabel() {
         return connectionItem.getProperty().getDisplayName();
-    }
-
-    public ConnectionItem getConnectionItem() {
-        return this.connectionItem;
-    }
-
-    public TaCoKitConfigurationModel getConfigurationModel() {
-        if (configurationModel == null) {
-            configurationModel = new TaCoKitConfigurationModel(connectionItem.getConnection()); 
-        }
-        return this.configurationModel;
     }
     
     public ConfigTypeNode getConfigTypeNode() {

@@ -158,9 +158,8 @@ public class TaCoKitMigrationManager {
             // ignore
         }
         monitor.subTask(Messages.getString("migration.check.progress.start", itemLabel, version)); //$NON-NLS-1$
-        TaCoKitConfigurationItemModel itemModel = new TaCoKitConfigurationItemModel(item, false);
-        TaCoKitConfigurationModel configModel = itemModel.getConfigurationModel();
-        if (isNeedMigration(configModel)) {
+        TaCoKitConfigurationModel configModel = new TaCoKitConfigurationModel(item.getConnection());
+        if (configModel.needsMigration()) {
             migrate(configModel, progressMonitor);
             return true;
         }
@@ -178,40 +177,15 @@ public class TaCoKitMigrationManager {
         if (monitor == null) {
             monitor = new NullProgressMonitor();
         }
-
         checkMonitor(monitor);
-        String label = ""; //$NON-NLS-1$
-        String storedVersion = ""; //$NON-NLS-1$
-        String newVersion = ""; //$NON-NLS-1$
-        try {
-            label = configModel.getConnection().getLabel();
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            storedVersion = configModel.getStoredVersion();
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            newVersion = String.valueOf(configModel.getConfigTypeNodeVersion());
-        } catch (Exception e) {
-            // ignore
-        }
+        String label = configModel.getConnection().getLabel();
+        final int storedVersion = configModel.getVersion();
+        final int newVersion = configModel.getConfigurationVersion();
         monitor.subTask(Messages.getString("migration.check.progress.execute", label, storedVersion, newVersion)); //$NON-NLS-1$
 
-        Map migrationResult = configurationType.migrate(configModel.getConfigurationId(),
-                Integer.valueOf(configModel.getStoredVersion()), configModel.getPropertiesWithoutBuiltIn());
-        configModel.storeVersion(String.valueOf(configModel.getConfigTypeNodeVersion()));
-        configModel.clearProperties(false);
-        configModel.getProperties().putAll(migrationResult);
-
-        configModel.storeVersion(String.valueOf(configModel.getConfigTypeNodeVersion()));
-    }
-
-    public boolean isNeedMigration(final TaCoKitConfigurationModel configModel) throws Exception {
-        int configVersion = configModel.getConfigTypeNodeVersion();
-        return !TaCoKitUtil.equals(configModel.getStoredVersion(), String.valueOf(configVersion));
+        Map<String, String> migratedProperties = configurationType.migrate(configModel.getConfigurationId(),
+                configModel.getVersion(), configModel.getProperties());
+        configModel.migrate(migratedProperties);
     }
 
     public void runMigrationJob() throws Exception {
