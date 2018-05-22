@@ -33,6 +33,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
@@ -323,15 +324,17 @@ public abstract class JobScriptsExportWizardPage extends WizardFileSystemResourc
         SashForm sash = createExportTree(parent);
 
         GridLayout layout = new GridLayout();
-        layout.verticalSpacing = 0;
         layout.marginHeight = 0;
         layout.marginBottom = 0;
-        Composite composite = new Composite(sash, SWT.NONE);
+        
+        Composite composite = new Composite(sash, SWT.BORDER);
         composite.setLayout(layout);
-        composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+        GridDataFactory.fillDefaults().grab(true, true).applyTo(composite);
+        
         composite.setFont(parent.getFont());
 
         createDestinationGroup(composite);
+        
         if (!isMultiNodes()) {
             createJobVersionGroup(composite);
         }
@@ -380,8 +383,10 @@ public abstract class JobScriptsExportWizardPage extends WizardFileSystemResourc
     protected SashForm createExportTree(Composite parent) {
         // Using a protected method to provide the tree. LiXiaopeng 2011-9-21
         treeViewer = getExportTree();
+        
         SashForm sashForm = treeViewer.createContents(parent);
         treeViewer.addCheckStateListener(checkStateListener);
+        
         return sashForm;
     }
 
@@ -398,26 +403,21 @@ public abstract class JobScriptsExportWizardPage extends WizardFileSystemResourc
      * @param composite
      */
     protected void createJobVersionGroup(Composite parent) {
+        
         Group versionGroup = new Group(parent, SWT.NONE);
-        GridLayout layout = new GridLayout();
+        GridDataFactory.fillDefaults().grab(true, false).applyTo(versionGroup);
+        
+        GridLayout layout = new GridLayout(2, false);
         versionGroup.setLayout(layout);
-        versionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
         versionGroup.setText(Messages.getString("JobScriptsExportWSWizardPage.newJobVersion", getProcessType())); //$NON-NLS-1$
         versionGroup.setFont(parent.getFont());
 
-        versionGroup.setLayout(new GridLayout(1, true));
-
-        Composite left = new Composite(versionGroup, SWT.NONE);
-        left.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false));
-        left.setLayout(new GridLayout(3, false));
-
-        Label label = new Label(left, SWT.NONE);
+        Label label = new Label(versionGroup, SWT.NONE);
         label.setText(Messages.getString("JobScriptsExportWSWizardPage.newJobVersion.Label", getProcessType())); //$NON-NLS-1$
 
-        final Combo versionCombo = new Combo(left, SWT.PUSH);
-        GridData gd = new GridData();
-        gd.horizontalSpan = 1;
-        versionCombo.setLayoutData(gd);
+        final Combo versionCombo = new Combo(versionGroup, SWT.PUSH);
+        
 
         String[] allVersions = JobVersionUtils.getAllVersions(nodes[0]);
         Arrays.sort(allVersions);
@@ -454,14 +454,13 @@ public abstract class JobScriptsExportWizardPage extends WizardFileSystemResourc
         Group optionsGroup = new Group(parent, SWT.NONE);
         GridLayout layout = new GridLayout();
         optionsGroup.setLayout(layout);
-        optionsGroup.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL));
+        
+        GridDataFactory.fillDefaults().grab(true, false).applyTo(optionsGroup);
+        
         optionsGroup.setText("Extract zip file"); //$NON-NLS-1$
         optionsGroup.setFont(parent.getFont());
-        optionsGroup.setLayout(new GridLayout(1, true));
-        Composite left = new Composite(optionsGroup, SWT.NONE);
-        left.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false));
-        left.setLayout(new GridLayout(3, false));
-        chkButton = new Button(left, SWT.CHECK);
+
+        chkButton = new Button(optionsGroup, SWT.CHECK);
         chkButton.setText(Messages.getString("JobScriptsExportWizardPage.extractZipFile")); //$NON-NLS-1$
         chkButton.setSelection(false);
         chkButton.addSelectionListener(new SelectionAdapter() {
