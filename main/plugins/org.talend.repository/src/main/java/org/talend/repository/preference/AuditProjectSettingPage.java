@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
@@ -32,7 +33,6 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
-import org.talend.commons.ui.swt.formtools.LabelledText;
 import org.talend.commons.utils.io.FilesUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
@@ -47,11 +47,9 @@ import org.talend.repository.model.IProxyRepositoryFactory;
  */
 public class AuditProjectSettingPage extends ProjectSettingPage {
 
-    private Button browseBtn;
-
-    private LabelledText generateFolderTxt;
-
     private Button button;
+
+    private String generatePath;
 
     /*
      * (non-Javadoc)
@@ -64,12 +62,6 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         GridLayout layout = new GridLayout(4, false);
         composite.setLayout(layout);
 
-        generateFolderTxt = new LabelledText(composite, Messages.getString("AuditProjectSettingPage.selectAuditReportFolder"), 2); //$NON-NLS-1$
-        generateFolderTxt.getTextControl().setEditable(false);
-
-        browseBtn = new Button(composite, SWT.NONE);
-        browseBtn.setText("..."); //$NON-NLS-1$
-
         button = new Button(composite, SWT.NONE);
         button.setText(Messages.getString("AuditProjectSettingPage.generateAuditReport")); //$NON-NLS-1$
         IProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
@@ -81,23 +73,20 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
     }
 
     private void addListeners() {
-        browseBtn.addSelectionListener(new SelectionAdapter() {
+        button.addSelectionListener(new SelectionAdapter() {
 
             @Override
             public void widgetSelected(SelectionEvent e) {
                 DirectoryDialog dial = new DirectoryDialog(getShell(), SWT.NONE);
                 String directory = dial.open();
                 if (StringUtils.isNotEmpty(directory)) {
-                    String portableValue = Path.fromOSString(directory).toPortableString();
-                    generateFolderTxt.setText(portableValue);
+                    generatePath = Path.fromOSString(directory).toPortableString();
+                } else {
+                    MessageDialog.openError(getShell(), "Error", //$NON-NLS-1$
+                            Messages.getString("AuditProjectSettingPage.selectAuditReportFolder")); //$NON-NLS-1$
+                    return;
                 }
-            }
-        });
 
-        button.addSelectionListener(new SelectionAdapter() {
-
-            @Override
-            public void widgetSelected(SelectionEvent e) {
                 ProgressMonitorDialog progressDialog = new ProgressMonitorDialog(
                         PlatformUI.getWorkbench().getDisplay().getActiveShell().getShell());
                 IRunnableWithProgress runnable = new IRunnableWithProgress() {
@@ -127,7 +116,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                                         service.populateAudit(
                                                 "jdbc:h2:" + path + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000", //$NON-NLS-1$ //$NON-NLS-2$
                                                 "org.h2.Driver", "tisadmin", "tisadmin"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                                        service.generateAuditReport(generateFolderTxt.getText());
+                                        service.generateAuditReport(generatePath);
                                     } catch (IOException e) {
                                         // nothing
                                     } finally {
