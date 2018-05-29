@@ -76,6 +76,14 @@
                class="org.talend.sdk.component.studio.metadata.handler.TaCoKitImportHandler">
          </importItemsHandler>
       </importItemsProvider>
+      <importResourcesProvider
+            description="Process migrator which is launched during process import"
+            id="org.talend.sdk.component.studio.metadata.handler.migrator"
+            priority="NORMAL">
+         <importResoucesHandler
+               class="org.talend.sdk.component.studio.metadata.handler.TaCoKitProcessMigrator">
+         </importResoucesHandler>
+      </importResourcesProvider>
   </extension>
   <extension
         point="org.talend.core.repository.repositorySeeker">
