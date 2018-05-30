@@ -50,6 +50,7 @@ import org.talend.repository.model.IProxyRepositoryFactory;
 import org.talend.repository.preference.audit.AuditManager;
 import org.talend.repository.preference.audit.SupportDBUrlStore;
 import org.talend.utils.security.CryptoHelper;
+import org.talend.utils.sugars.TypedReturnCode;
 
 /**
  * created by hcyi on May 9, 2018
@@ -139,7 +140,15 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
 
             @Override
             public void widgetSelected(SelectionEvent e) {
-
+                if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
+                    ICommandLineService service = (ICommandLineService) GlobalServiceRegister.getDefault()
+                            .getService(ICommandLineService.class);
+                    TypedReturnCode<java.sql.Connection> result = service.checkConnection(urlText.getText(), driverText.getText(),
+                            usernameText.getText(),
+                            passwordText.getText());
+                    MessageDialog.openInformation(getShell(),
+                            Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText"), result.getMessage()); //$NON-NLS-1$
+                }
             }
 
         });
@@ -182,10 +191,8 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                                         tempFolder.mkdir();
                                         path = path.replace("\\", "/");//$NON-NLS-1$//$NON-NLS-2$
 
-                                        // Just use the h2 as default now, later will add support for others
-                                        service.populateAudit(
-                                                "jdbc:h2:" + path + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000", //$NON-NLS-1$ //$NON-NLS-2$
-                                                "org.h2.Driver", "tisadmin", "tisadmin"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                                        service.populateAudit(urlText.getText(), driverText.getText(), usernameText.getText(),
+                                                passwordText.getText());
                                         service.generateAuditReport(generatePath);
                                     } catch (IOException e) {
                                         // nothing
