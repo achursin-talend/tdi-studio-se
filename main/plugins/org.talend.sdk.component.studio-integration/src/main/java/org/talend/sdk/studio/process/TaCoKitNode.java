@@ -81,6 +81,7 @@ public final class TaCoKitNode {
                 node.getElementParameter().add(parameter);
             }
         });
+        setPersistedVersion(detail.getVersion());
     }
     
     /**
@@ -143,6 +144,10 @@ public final class TaCoKitNode {
     
     public int getPersistedVersion() {
         return Integer.parseInt(node.getComponentVersion());
+    }
+    
+    private void setPersistedVersion(int version) {
+        node.setComponentVersion(Integer.toString(version));
     }
     
     public static boolean isTacokit(final NodeTypeImpl node) {
