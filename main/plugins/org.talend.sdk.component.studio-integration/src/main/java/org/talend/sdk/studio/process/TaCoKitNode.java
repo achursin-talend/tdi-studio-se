@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
+import org.talend.core.model.process.EParameterFieldType;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.utils.emf.talendfile.impl.ElementParameterTypeImpl;
 import org.talend.designer.core.model.utils.emf.talendfile.impl.NodeTypeImpl;
@@ -131,11 +132,15 @@ public final class TaCoKitNode {
         EList parameters = node.getElementParameter();
         for (final Object elem : parameters) {
             ElementParameterTypeImpl parameter = (ElementParameterTypeImpl) elem;
-            if (TECHNICAL_PARAMETERS.contains(parameter.getName())) {
+            if (isTechnical(parameter)) {
                 properties.put(parameter.getName(), parameter.getValue());
             }
         }
         return properties;
+    }
+    
+    private boolean isTechnical(final ElementParameterTypeImpl parameter) {
+        return TECHNICAL_PARAMETERS.contains(parameter.getName()) || EParameterFieldType.TECHNICAL.equals(parameter.getField());
     }
     
     public int getCurrentVersion() {
