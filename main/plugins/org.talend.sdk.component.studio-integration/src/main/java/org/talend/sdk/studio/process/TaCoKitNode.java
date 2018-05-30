@@ -29,7 +29,7 @@ public final class TaCoKitNode {
     
     private final ComponentDetail detail;
     
-    private static final Set<String> TECHNICAL_PARAMETERS = new HashSet(
+    private static final Set<String> TECHNICAL_PARAMETERS = new HashSet<>(
             Arrays.asList(EParameterName.UNIQUE_NAME.getName())); 
     
     public TaCoKitNode(final NodeTypeImpl node) {
@@ -58,6 +58,7 @@ public final class TaCoKitNode {
     
     public Map<String, String> getProperties() {
         Map<String, String> properties = new HashMap<>();
+        @SuppressWarnings("rawtypes")
         EList parameters = node.getElementParameter();
         for (final Object elem : parameters) {
             ElementParameterTypeImpl parameter = (ElementParameterTypeImpl) elem;
@@ -129,6 +130,7 @@ public final class TaCoKitNode {
      */
     private Map<String, String> getTechnicalProperties() {
         Map<String, String> properties = new HashMap<>();
+        @SuppressWarnings("rawtypes")
         EList parameters = node.getElementParameter();
         for (final Object elem : parameters) {
             ElementParameterTypeImpl parameter = (ElementParameterTypeImpl) elem;
@@ -140,7 +142,7 @@ public final class TaCoKitNode {
     }
     
     private boolean isTechnical(final ElementParameterTypeImpl parameter) {
-        return TECHNICAL_PARAMETERS.contains(parameter.getName()) || EParameterFieldType.TECHNICAL.equals(parameter.getField());
+        return TECHNICAL_PARAMETERS.contains(parameter.getName()) || EParameterFieldType.TECHNICAL.toString().equals(parameter.getField());
     }
     
     public int getCurrentVersion() {
