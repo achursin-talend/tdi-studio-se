@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
@@ -25,6 +26,8 @@ import org.talend.sdk.component.studio.model.parameter.WidgetTypeMapper;
  */
 public final class TaCoKitNode {
     
+    public static final String TACOKIT_COMPONENT_ID = "TACOKIT_COMPONENT_ID";
+    
     private final NodeTypeImpl node;
     
     private final ComponentDetail detail;
@@ -38,8 +41,9 @@ public final class TaCoKitNode {
             throw new IllegalArgumentException("It is not Tacokit node " + node.getComponentName());
         }
         this.node = node;
-        this.detail = Lookups.service().getDetail(node.getComponentName()).orElseThrow(() -> 
+        final String componentId = getComponentId(node).orElseThrow(() -> 
             new IllegalStateException("No component detail for " + node.getComponentName()));
+        this.detail = Lookups.service().getDetailById(componentId);
     }
     
     public String getId() {
@@ -153,12 +157,22 @@ public final class TaCoKitNode {
         return Integer.parseInt(node.getComponentVersion());
     }
     
-    private void setPersistedVersion(int version) {
+    private void setPersistedVersion(final int version) {
         node.setComponentVersion(Integer.toString(version));
     }
     
     public static boolean isTacokit(final NodeTypeImpl node) {
-        return Lookups.service().getDetail(node.getComponentName()).isPresent();
+        return getComponentId(node).isPresent();
+    }
+    
+    private static Optional<String> getComponentId(final NodeTypeImpl node) {
+        for (final Object elem : node.getElementParameter()) {
+            ElementParameterTypeImpl parameter = (ElementParameterTypeImpl) elem;
+            if (TACOKIT_COMPONENT_ID.equals(parameter.getName())) {
+                return Optional.ofNullable(parameter.getValue());
+            }
+        }
+        return Optional.empty();
     }
     
     /**

@@ -226,6 +226,14 @@ public class ComponentService {
         }
         return Optional.of(detailList.getDetails().get(0));
     }
+    
+    public ComponentDetail getDetailById(final String id) {
+        final ComponentDetailList detailList = client().getDetail(language(), new String[] { id });
+        if (detailList.getDetails().size() != 1) {
+            throw new IllegalArgumentException("No single detail for id: " + id);
+        }
+        return detailList.getDetails().get(0);
+    }
 
     private ComponentIndices getComponentIndex() {
         if (index == null) {
