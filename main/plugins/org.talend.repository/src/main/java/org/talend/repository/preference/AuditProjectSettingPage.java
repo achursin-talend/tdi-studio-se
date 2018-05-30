@@ -21,24 +21,35 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+import org.talend.commons.ui.swt.formtools.LabelledCombo;
+import org.talend.commons.ui.swt.formtools.LabelledText;
 import org.talend.commons.utils.io.FilesUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.core.runtime.projectsetting.ProjectPreferenceManager;
 import org.talend.core.service.ICommandLineService;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
+import org.talend.repository.preference.audit.AuditManager;
+import org.talend.repository.preference.audit.SupportDBUrlStore;
+import org.talend.utils.security.CryptoHelper;
 
 /**
  * created by hcyi on May 9, 2018
@@ -47,7 +58,19 @@ import org.talend.repository.model.IProxyRepositoryFactory;
  */
 public class AuditProjectSettingPage extends ProjectSettingPage {
 
-    private Button button;
+    private LabelledCombo dbTypeCombo;
+
+    private LabelledText driverText;
+
+    private LabelledText urlText;
+
+    private LabelledText usernameText;
+
+    private LabelledText passwordText;
+
+    private Button checkButton;
+
+    private Button generateButton;
 
     private String generatePath;
 
@@ -61,19 +84,66 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         Composite composite = new Composite(parent, SWT.NULL);
         GridLayout layout = new GridLayout(4, false);
         composite.setLayout(layout);
+        //
+        createDbConfigGroup(composite);
+        checkButton = new Button(composite, SWT.NULL);
+        checkButton.setText(Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText")); //$NON-NLS-1$
 
-        button = new Button(composite, SWT.NONE);
-        button.setText(Messages.getString("AuditProjectSettingPage.generateAuditReport")); //$NON-NLS-1$
+        generateButton = new Button(composite, SWT.NONE);
+        generateButton.setText(Messages.getString("AuditProjectSettingPage.generateButtonText")); //$NON-NLS-1$
         IProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
         if (factory.isUserReadOnlyOnCurrentProject()) {
             composite.setEnabled(false);
         }
         addListeners();
+        load();
         return composite;
     }
 
+    protected Composite createDbConfigGroup(Composite parent) {
+        GridLayout layout2 = (GridLayout) parent.getLayout();
+        Group group = new Group(parent, SWT.NONE);
+        group.setText(Messages.getString("AuditProjectSettingPage.DBConfig.title")); //$NON-NLS-1$
+        GridDataFactory.fillDefaults().span(layout2.numColumns, 1).align(SWT.FILL, SWT.BEGINNING).grab(true, false)
+                .applyTo(group);
+        GridLayout layout = new GridLayout(3, false);
+        layout.marginHeight = 0;
+        group.setLayout(layout);
+        //
+        dbTypeCombo = new LabelledCombo(group, Messages.getString("AuditProjectSettingPage.DBConfig.dbType"), //$NON-NLS-1$
+                Messages.getString("AuditProjectSettingPage.DBConfig.dbTypeTip"), //$NON-NLS-1$
+                SupportDBUrlStore.getInstance().getDBDisplayNames(), 2, 
+                true);
+        driverText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Driver"), 2); //$NON-NLS-1$
+        driverText.setEditable(false);
+        urlText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Url"), 2); //$NON-NLS-1$
+        usernameText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Username"), 2); //$NON-NLS-1$
+        passwordText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Password"), 2, //$NON-NLS-1$
+                SWT.BORDER | SWT.SINGLE | SWT.PASSWORD);
+        return group;
+    }
+
     private void addListeners() {
-        button.addSelectionListener(new SelectionAdapter() {
+        dbTypeCombo.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(final ModifyEvent e) {
+                String selectedItem = ((Combo) e.getSource()).getText();
+                String dbType = SupportDBUrlStore.getInstance().getDBType(selectedItem);
+                driverText.setText(SupportDBUrlStore.getInstance().getDBUrlType(dbType).getDbDriver());
+                urlText.setText(SupportDBUrlStore.getInstance().getDefaultDBUrl(dbType));
+            }
+        });
+
+        checkButton.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+
+            }
+
+        });
+        generateButton.addSelectionListener(new SelectionAdapter() {
 
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -139,6 +209,26 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         });
     }
 
+    private void load() {
+        ProjectPreferenceManager prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
+        dbTypeCombo.setText(prefManager.getValue(AuditManager.AUDIT_DBTYPE));
+        driverText.setText(prefManager.getValue(AuditManager.AUDIT_DRIVER));
+        urlText.setText(prefManager.getValue(AuditManager.AUDIT_URL));
+        usernameText.setText(prefManager.getValue(AuditManager.AUDIT_USERNAME));
+        passwordText.setText(CryptoHelper.getDefault().decrypt(prefManager.getValue(AuditManager.AUDIT_PASSWORD)));
+    }
+
+    private void save() {
+        ProjectPreferenceManager prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
+        prefManager.setValue(AuditManager.AUDIT_DBTYPE, dbTypeCombo.getText());
+        prefManager.setValue(AuditManager.AUDIT_DRIVER, driverText.getText());
+        prefManager.setValue(AuditManager.AUDIT_URL, urlText.getText());
+        prefManager.setValue(AuditManager.AUDIT_USERNAME, usernameText.getText());
+        prefManager.setValue(AuditManager.AUDIT_PASSWORD, CryptoHelper.getDefault().encrypt(passwordText.getText()));
+        prefManager.save();
+    }
+
+
     /*
      * (non-Javadoc)
      * 
@@ -146,6 +236,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
      */
     @Override
     protected void performApply() {
+        save();
         super.performApply();
     }
 
@@ -156,6 +247,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
      */
     @Override
     public boolean performOk() {
+        save();
         return super.performOk();
     }
 
