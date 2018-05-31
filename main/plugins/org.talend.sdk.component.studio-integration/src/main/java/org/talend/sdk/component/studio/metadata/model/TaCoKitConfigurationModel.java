@@ -78,38 +78,6 @@ public class TaCoKitConfigurationModel {
     private static String getConfigId(final Connection connection) {
         return (String) connection.getProperties().get(TACOKIT_CONFIG_ID);
     }
-
-//    @Deprecated
-//    public TaCoKitConfigurationModel(final Connection connection, final boolean checkVersion) throws Exception {
-//        this.connection = connection;
-//        if (checkVersion) {
-//            String configurationId = getConfigurationId();
-//            if (!TaCoKitUtil.isBlank(configurationId)) {
-//                try {
-//                    if (!TaCoKitUtil.equals(getStoredVersion(), String.valueOf(getConfigTypeNodeVersion()))) {
-//                        ExceptionHandler.process(new Exception(Messages.getString("migration.check.version.different", //$NON-NLS-1$
-//                                configurationId, getStoredVersion(), getConfigTypeNodeVersion())), Priority.WARN);
-//                    }
-//                } catch (Exception e) {
-//                    ExceptionHandler.process(e);
-//                }
-//                try {
-//                    /**
-//                     * In case TaCoKit metadata is used in jobs which are migrating during logon project, so just
-//                     * migrate it first to provide latest information.
-//                     */
-//                    if (!ProxyRepositoryFactory.getInstance().isFullLogonFinished()) {
-//                        TaCoKitMigrationManager migrationManager = Lookups.taCoKitCache().getMigrationManager();
-//                        if (migrationManager.isNeedMigration(this)) {
-//                            migrationManager.migrate(this, null);
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    ExceptionHandler.process(e);
-//                }
-//            }
-//        }
-//    }
     
     private boolean isVersionSet() {
         return getAllProperties().containsKey(TACOKIT_CONFIG_VERSION);
