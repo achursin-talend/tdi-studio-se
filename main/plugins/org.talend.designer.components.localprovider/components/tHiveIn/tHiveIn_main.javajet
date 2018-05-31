@@ -150,8 +150,11 @@ imports="
                         bw_<%=cid%>.write("ADD JAR " + wasbPath_<%=cid%> + new java.io.File(getJarsToRegister_<%=cid %>.replaceJarPaths("<%=jars.get(j)%>")).getName() + ";");
                         libjars_<%=cid%>.append(getJarsToRegister_<%=cid %>.replaceJarPaths("<%=jars.get(j)%>") + ",");
 <%
-                    }
-                    if (hiveDistrib.isGoogleDataprocDistribution()) {
+                    } else if (hiveDistrib.isQuboleDistribution()) {
+                    %>
+                    	// Qubole hive 1.2 supports parquet by default.
+                    <%
+                    } else { // dataproc
                         if (isLog4jEnabled) {
 %>
                             log.debug("Query for <%=cid%>: " + "ADD JAR " + stagingBucketPath_<%=cid%> + new java.io.File(getJarsToRegister_<%=cid %>.replaceJarPaths("<%=jars.get(j)%>")).getName() + ";");
@@ -161,11 +164,6 @@ imports="
                         instance_<%=cid%>.addQuery("ADD JAR " + stagingBucketPath_<%=cid%> + new java.io.File(getJarsToRegister_<%=cid %>.replaceJarPaths("<%=jars.get(j)%>")).getName() + ";");
                         libjars_<%=cid%>.append(getJarsToRegister_<%=cid %>.replaceJarPaths("<%=jars.get(j)%>") + ",");
 <%
-                    }
-                    if (hiveDistrib.isQuboleDistribution()) {
-                    %>
-                    	// Qubole hive 1.2 supports parquet by default.
-                    <%
                     }
                 }
             }
@@ -388,17 +386,17 @@ imports="
         <%
 			if (isLog4jEnabled) {
 %>
-				log.info("<%=cid%> - query added: " + query_<%=cid %>.replace("';'", "'\\;'").replaceAll("\n", " ").replaceAll(" +", " ") + ";");
+				log.info("<%=cid%> - query added: " + query_<%=cid %>.replaceAll("\n", " ").replaceAll(" +", " ") + ";");
 				log.info("<%=cid%> - queries sent to cluster, waiting for execution result ...");
 <%
 			}
             if (quboleClusterLabel != null) {
 %>
-           		String execution_result_<%=cid%> = instance_<%=cid%>.execute(queries_<%=cid%> + query_<%=cid %>.replace("';'", "'\\;'") + ";", <%=quboleClusterLabel%>).getResults();
+           		String execution_result_<%=cid%> = instance_<%=cid%>.execute(queries_<%=cid%> + query_<%=cid %> + ";", <%=quboleClusterLabel%>).getResults();
             <%
             } else {
 %>
-				String execution_result_<%=cid%> = instance_<%=cid%>.execute(queries_<%=cid%> + query_<%=cid %>.replace("';'", "'\\;'") + ";").getResults();
+				String execution_result_<%=cid%> = instance_<%=cid%>.execute(queries_<%=cid%> + query_<%=cid %> + ";").getResults();
 <%
 			}
 			if (isLog4jEnabled) {
