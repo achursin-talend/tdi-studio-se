@@ -8,11 +8,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.common.util.EList;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
-import org.talend.core.model.properties.ConnectionItem;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.properties.ProcessItem;
-import org.talend.core.model.properties.Property;
-import org.talend.core.model.properties.impl.ProcessItemImpl;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.designer.core.model.utils.emf.talendfile.impl.NodeTypeImpl;
@@ -88,12 +85,9 @@ public class TaCoKitProcessMigrator implements IImportResourcesHandler {
     }
     
     private void migrateItem(final ProcessItem item) {
-//        if (ProcessItemImpl.class.isInstance(item)) {
-//            ProcessItemImpl processItem = (ProcessItemImpl) item;
-            final ProcessTypeImpl processType = (ProcessTypeImpl) item.getProcess();
-            migrateProcess(processType);
-            save(item);
-//        } // else no-op
+        final ProcessTypeImpl processType = (ProcessTypeImpl) item.getProcess();
+        migrateProcess(processType);
+        save(item);
     }
     
     private void migrateProcess(final ProcessTypeImpl process) {
