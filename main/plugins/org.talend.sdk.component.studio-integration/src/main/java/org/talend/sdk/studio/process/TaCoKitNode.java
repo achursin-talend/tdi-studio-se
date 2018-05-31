@@ -2,9 +2,11 @@ package org.talend.sdk.studio.process;
 
 import static org.talend.core.model.process.EParameterFieldType.TEXT;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,12 +77,9 @@ public final class TaCoKitNode {
     
     @SuppressWarnings("unchecked")
     public void migrate(final Map<String, String> properties) {
-        final Map<String, String> technicalProperties = getTechnicalProperties();
+        final List<ElementParameterTypeImpl> technicalParameters = getTechnicalParameters();
         node.getElementParameter().clear();
-        technicalProperties.forEach((name, value) -> {
-            final ElementParameterTypeImpl parameter = createTechnicalParameter(name, value);
-            node.getElementParameter().add(parameter);
-        });
+        node.getElementParameter().addAll(technicalParameters);
         properties.forEach((name, value) -> {
             if (isComponentProperty(name)) {
                 final ElementParameterTypeImpl parameter = createParameter(name, value);
@@ -108,14 +107,6 @@ public final class TaCoKitNode {
         return parameter;
     }
     
-    private ElementParameterTypeImpl createTechnicalParameter(final String name, final String value) {
-        final ElementParameterTypeImpl parameter = new ElementParameter();
-        parameter.setName(name);
-        parameter.setValue(value);
-        parameter.setField(TEXT.getName());
-        return parameter;
-    }
-    
     private SimplePropertyDefinition getProperty(final String name) {
         return detail.getProperties().stream().filter(property -> property.getPath().equals(name)).findFirst().orElseThrow(
                 () -> new IllegalArgumentException("Can't find property for name: " + name));
@@ -128,21 +119,21 @@ public final class TaCoKitNode {
     }
     
     /**
-     * Returns technical node properties. Such properties should not be lost during migration
-     * 
-     * @return a map with technical properties 
+     * Returns a list of technical parameters. These parameters should not be lost during migration
+     *
+     * @return a list with technical parameters 
      */
-    private Map<String, String> getTechnicalProperties() {
-        Map<String, String> properties = new HashMap<>();
+    private List<ElementParameterTypeImpl> getTechnicalParameters() {
+        List<ElementParameterTypeImpl> technical = new ArrayList<>();
         @SuppressWarnings("rawtypes")
         EList parameters = node.getElementParameter();
         for (final Object elem : parameters) {
             ElementParameterTypeImpl parameter = (ElementParameterTypeImpl) elem;
             if (isTechnical(parameter)) {
-                properties.put(parameter.getName(), parameter.getValue());
+                technical.add(parameter);
             }
         }
-        return properties;
+        return technical;
     }
     
     private boolean isTechnical(final ElementParameterTypeImpl parameter) {
