@@ -28,6 +28,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -59,6 +60,12 @@ import org.talend.utils.sugars.TypedReturnCode;
  */
 public class AuditProjectSettingPage extends ProjectSettingPage {
 
+    private Button generateButton;
+
+    private Button savedInDBButton;
+
+    private Group dbConfigGroup;
+
     private LabelledCombo dbTypeCombo;
 
     private LabelledText driverText;
@@ -71,9 +78,9 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
 
     private Button checkButton;
 
-    private Button generateButton;
-
     private String generatePath;
+
+    private ProjectPreferenceManager prefManager;
 
     /*
      * (non-Javadoc)
@@ -83,75 +90,60 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
     @Override
     protected Control createContents(Composite parent) {
         Composite composite = new Composite(parent, SWT.NULL);
-        GridLayout layout = new GridLayout(4, false);
+        GridLayout layout = new GridLayout(1, false);
         composite.setLayout(layout);
-        //
-        createDbConfigGroup(composite);
-        checkButton = new Button(composite, SWT.NULL);
-        checkButton.setText(Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText")); //$NON-NLS-1$
 
         generateButton = new Button(composite, SWT.NONE);
         generateButton.setText(Messages.getString("AuditProjectSettingPage.generateButtonText")); //$NON-NLS-1$
+
+        savedInDBButton = new Button(composite, SWT.CHECK);
+        savedInDBButton.setText(Messages.getString("AuditProjectSettingPage.savedInDBButtonText")); //$NON-NLS-1$
+        //
+        createDbConfigGroup(composite);
+
         IProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
         if (factory.isUserReadOnlyOnCurrentProject()) {
             composite.setEnabled(false);
         }
+        prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
         addListeners();
-        load();
+        init();
         return composite;
     }
 
     protected Composite createDbConfigGroup(Composite parent) {
         GridLayout layout2 = (GridLayout) parent.getLayout();
-        Group group = new Group(parent, SWT.NONE);
-        group.setText(Messages.getString("AuditProjectSettingPage.DBConfig.title")); //$NON-NLS-1$
+        dbConfigGroup = new Group(parent, SWT.NONE);
+        dbConfigGroup.setText(Messages.getString("AuditProjectSettingPage.DBConfig.title")); //$NON-NLS-1$
         GridDataFactory.fillDefaults().span(layout2.numColumns, 1).align(SWT.FILL, SWT.BEGINNING).grab(true, false)
-                .applyTo(group);
-        GridLayout layout = new GridLayout(3, false);
-        layout.marginHeight = 0;
-        group.setLayout(layout);
-        //
-        dbTypeCombo = new LabelledCombo(group, Messages.getString("AuditProjectSettingPage.DBConfig.dbType"), //$NON-NLS-1$
+                .applyTo(dbConfigGroup);
+        dbConfigGroup.setLayout(new GridLayout(1, false));
+
+        Composite dbConfigComposite = new Composite(dbConfigGroup, SWT.NULL);
+        GridLayout dbConfigCompLayout = new GridLayout(3, false);
+        dbConfigComposite.setLayout(dbConfigCompLayout);
+        dbConfigComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        dbTypeCombo = new LabelledCombo(dbConfigComposite, Messages.getString("AuditProjectSettingPage.DBConfig.dbType"), //$NON-NLS-1$
                 Messages.getString("AuditProjectSettingPage.DBConfig.dbTypeTip"), //$NON-NLS-1$
-                SupportDBUrlStore.getInstance().getDBDisplayNames(), 2, 
-                true);
-        driverText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Driver"), 2); //$NON-NLS-1$
-        driverText.setEditable(false);
-        urlText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Url"), 2); //$NON-NLS-1$
-        usernameText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Username"), 2); //$NON-NLS-1$
-        passwordText = new LabelledText(group, Messages.getString("AuditProjectSettingPage.DBConfig.Password"), 2, //$NON-NLS-1$
+                SupportDBUrlStore.getInstance().getDBDisplayNames(), 2, true);
+        driverText = new LabelledText(dbConfigComposite, Messages.getString("AuditProjectSettingPage.DBConfig.Driver"), 2); //$NON-NLS-1$
+        driverText.setReadOnly(true);
+        urlText = new LabelledText(dbConfigComposite, Messages.getString("AuditProjectSettingPage.DBConfig.Url"), 2); //$NON-NLS-1$
+        usernameText = new LabelledText(dbConfigComposite, Messages.getString("AuditProjectSettingPage.DBConfig.Username"), 2); //$NON-NLS-1$
+        passwordText = new LabelledText(dbConfigComposite, Messages.getString("AuditProjectSettingPage.DBConfig.Password"), 2, //$NON-NLS-1$
                 SWT.BORDER | SWT.SINGLE | SWT.PASSWORD);
-        return group;
+
+        Composite checkComposite = new Composite(dbConfigGroup, SWT.NULL);
+        GridLayout checkCompLayout = new GridLayout(1, false);
+        checkCompLayout.marginHeight = 0;
+        checkComposite.setLayout(checkCompLayout);
+        checkComposite.setLayoutData(new GridData(SWT.RIGHT, SWT.RIGHT, true, true));
+        checkButton = new Button(checkComposite, SWT.RIGHT_TO_LEFT);
+        checkButton.setText(Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText")); //$NON-NLS-1$
+        return dbConfigGroup;
     }
 
     private void addListeners() {
-        dbTypeCombo.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(final ModifyEvent e) {
-                String selectedItem = ((Combo) e.getSource()).getText();
-                String dbType = SupportDBUrlStore.getInstance().getDBType(selectedItem);
-                driverText.setText(SupportDBUrlStore.getInstance().getDBUrlType(dbType).getDbDriver());
-                urlText.setText(SupportDBUrlStore.getInstance().getDefaultDBUrl(dbType));
-            }
-        });
-
-        checkButton.addSelectionListener(new SelectionAdapter() {
-
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
-                    ICommandLineService service = (ICommandLineService) GlobalServiceRegister.getDefault()
-                            .getService(ICommandLineService.class);
-                    TypedReturnCode<java.sql.Connection> result = service.checkConnection(urlText.getText(), driverText.getText(),
-                            usernameText.getText(),
-                            passwordText.getText());
-                    MessageDialog.openInformation(getShell(),
-                            Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText"), result.getMessage()); //$NON-NLS-1$
-                }
-            }
-
-        });
         generateButton.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -181,23 +173,31 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                                 if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
                                     ICommandLineService service = (ICommandLineService) GlobalServiceRegister.getDefault()
                                             .getService(ICommandLineService.class);
-                                    String path = "";//$NON-NLS-1$
-                                    File tempFolder = null;
-                                    try {
-                                        File createTempFile = File.createTempFile("AuditReport", ""); //$NON-NLS-1$ //$NON-NLS-2$
-                                        path = createTempFile.getPath();
-                                        createTempFile.delete();
-                                        tempFolder = new File(path);
-                                        tempFolder.mkdir();
-                                        path = path.replace("\\", "/");//$NON-NLS-1$//$NON-NLS-2$
-
+                                    if (savedInDBButton.getSelection()) {
                                         service.populateAudit(urlText.getText(), driverText.getText(), usernameText.getText(),
                                                 passwordText.getText());
                                         service.generateAuditReport(generatePath);
-                                    } catch (IOException e) {
-                                        // nothing
-                                    } finally {
-                                        FilesUtils.deleteFile(tempFolder, true);
+                                    } else {
+                                        String path = "";//$NON-NLS-1$
+                                        File tempFolder = null;
+                                        try {
+                                            File createTempFile = File.createTempFile("AuditReport", ""); //$NON-NLS-1$ //$NON-NLS-2$
+                                            path = createTempFile.getPath();
+                                            createTempFile.delete();
+                                            tempFolder = new File(path);
+                                            tempFolder.mkdir();
+                                            path = path.replace("\\", "/");//$NON-NLS-1$//$NON-NLS-2$
+
+                                            // Just use the h2 as default if no check
+                                            service.populateAudit(
+                                                    "jdbc:h2:" + path + "/database/audit;AUTO_SERVER=TRUE;lock_timeout=15000", //$NON-NLS-1$ //$NON-NLS-2$
+                                                    "org.h2.Driver", "tisadmin", "tisadmin"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                                            service.generateAuditReport(generatePath);
+                                        } catch (IOException e) {
+                                            // nothing
+                                        } finally {
+                                            FilesUtils.deleteFile(tempFolder, true);
+                                        }
                                     }
                                 }
                             }
@@ -214,27 +214,87 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                 }
             }
         });
+
+        savedInDBButton.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                reLoad();
+            }
+
+        });
+
+        dbTypeCombo.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(final ModifyEvent e) {
+                String selectedItem = ((Combo) e.getSource()).getText();
+                String dbType = SupportDBUrlStore.getInstance().getDBType(selectedItem);
+                driverText.setText(SupportDBUrlStore.getInstance().getDBUrlType(dbType).getDbDriver());
+                urlText.setText(SupportDBUrlStore.getInstance().getDefaultDBUrl(dbType));
+            }
+        });
+
+        checkButton.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
+                    ICommandLineService service = (ICommandLineService) GlobalServiceRegister.getDefault()
+                            .getService(ICommandLineService.class);
+                    TypedReturnCode<java.sql.Connection> result = service.checkConnection(urlText.getText(), driverText.getText(),
+                            usernameText.getText(), passwordText.getText());
+                    MessageDialog.openInformation(getShell(),
+                            Messages.getString("AuditProjectSettingPage.DBConfig.CheckButtonText"), result.getMessage()); //$NON-NLS-1$
+                }
+            }
+
+        });
     }
 
-    private void load() {
-        ProjectPreferenceManager prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
-        dbTypeCombo.setText(prefManager.getValue(AuditManager.AUDIT_DBTYPE));
-        driverText.setText(prefManager.getValue(AuditManager.AUDIT_DRIVER));
-        urlText.setText(prefManager.getValue(AuditManager.AUDIT_URL));
-        usernameText.setText(prefManager.getValue(AuditManager.AUDIT_USERNAME));
-        passwordText.setText(CryptoHelper.getDefault().decrypt(prefManager.getValue(AuditManager.AUDIT_PASSWORD)));
+    private void init() {
+        savedInDBButton.setSelection(prefManager.getBoolean(AuditManager.AUDIT_SAVEDINDB));
+        reLoad();
+    }
+
+    private void reLoad() {
+        if (savedInDBButton.getSelection()) {
+            dbTypeCombo.setText(prefManager.getValue(AuditManager.AUDIT_DBTYPE));
+            driverText.setText(prefManager.getValue(AuditManager.AUDIT_DRIVER));
+            urlText.setText(prefManager.getValue(AuditManager.AUDIT_URL));
+            usernameText.setText(prefManager.getValue(AuditManager.AUDIT_USERNAME));
+            passwordText.setText(CryptoHelper.getDefault().decrypt(prefManager.getValue(AuditManager.AUDIT_PASSWORD)));
+        }
+        hideControl(!savedInDBButton.getSelection());
+    }
+
+    private void hideControl(boolean hide) {
+        dbTypeCombo.setReadOnly(hide);
+        urlText.setReadOnly(hide);
+        usernameText.setReadOnly(hide);
+        passwordText.setReadOnly(hide);
+        checkButton.setEnabled(!hide);
     }
 
     private void save() {
-        ProjectPreferenceManager prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
         prefManager.setValue(AuditManager.AUDIT_DBTYPE, dbTypeCombo.getText());
         prefManager.setValue(AuditManager.AUDIT_DRIVER, driverText.getText());
         prefManager.setValue(AuditManager.AUDIT_URL, urlText.getText());
         prefManager.setValue(AuditManager.AUDIT_USERNAME, usernameText.getText());
         prefManager.setValue(AuditManager.AUDIT_PASSWORD, CryptoHelper.getDefault().encrypt(passwordText.getText()));
+        prefManager.setValue(AuditManager.AUDIT_SAVEDINDB, savedInDBButton.getSelection());
         prefManager.save();
     }
 
+    private void performDefaultStatus() {
+        savedInDBButton.setSelection(false);
+        dbTypeCombo.deselectAll();
+        driverText.setText(""); //$NON-NLS-1$
+        urlText.setText("");//$NON-NLS-1$
+        usernameText.setText("");//$NON-NLS-1$
+        passwordText.setText("");//$NON-NLS-1$
+        hideControl(true);
+    }
 
     /*
      * (non-Javadoc)
@@ -269,6 +329,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
 
     @Override
     protected void performDefaults() {
+        performDefaultStatus();
         super.performDefaults();
     }
 }

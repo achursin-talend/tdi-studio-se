@@ -21,6 +21,8 @@ public class AuditManager {
 
     public static final String AUDIT_RESOURCES = "org.talend.audit"; //$NON-NLS-1$
 
+    public static final String AUDIT_SAVEDINDB = "audit.saved.in.db"; //$NON-NLS-1$
+
     public static final String AUDIT_DBTYPE = "audit.dbType"; //$NON-NLS-1$
 
     public static final String AUDIT_DRIVER = "audit.Driver"; //$NON-NLS-1$
